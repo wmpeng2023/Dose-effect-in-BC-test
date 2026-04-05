@@ -15,7 +15,21 @@ An R Shiny application analyzing the relationship between dose level, serum Copp
 - **Upload your own data** — CSV template provided in the app
 - **Export to Word** — download a formatted summary report
 
-## Requirements
+## Access Options
+
+### Option A — Live Web App (no installation needed)
+> **Click to open:** `https://YOUR_SHINYAPPS_USERNAME.shinyapps.io/Dose-effect-in-BC-test/`
+>
+> *(Link will be active after deployment — see [Deploying to shinyapps.io](#deploying-to-shinyappsio) below)*
+
+Anyone with the link can open and use the app in their browser — no R required.
+
+### Option B — Run Locally (requires R)
+Follow the Quick Start steps below.
+
+---
+
+## Requirements (Option B only)
 
 - R >= 4.1.0 ([download](https://cran.r-project.org/))
 - RStudio (recommended — [download](https://posit.co/download/rstudio-desktop/))
@@ -64,10 +78,35 @@ The app uses a **long-format** dataset where each row is one patient × dysgeusi
 - Event-free patients have **one row** with grade = 0 and time = NA
 - Download the CSV template from the **Data** tab to upload your own dataset
 
+## Deploying to shinyapps.io
+
+To publish the app so anyone can open it via a browser link:
+
+1. Sign up for a free account at [shinyapps.io](https://www.shinyapps.io)
+2. Go to **Account → Tokens → Show** and copy your `name`, `token`, and `secret`
+3. Open `deploy.R`, fill in your credentials, and run it in RStudio:
+
+```r
+source("deploy.R")
+```
+
+Your app will be live at:
+```
+https://YOUR_USERNAME.shinyapps.io/Dose-effect-in-BC-test/
+```
+
+Share that URL — anyone can click it, no R needed.
+
+> **Note:** The free tier allows 25 active hours/month and up to 5 apps.
+> Credentials in `deploy.R` are **never committed to GitHub** (excluded via `.gitignore`).
+
+---
+
 ## File Structure
 
 ```
 ├── app.R                  # Main Shiny entry point
+├── deploy.R               # shinyapps.io deployment script
 ├── DESCRIPTION            # Package dependency declarations
 ├── renv.lock              # Exact package versions (used by renv::restore())
 ├── R/

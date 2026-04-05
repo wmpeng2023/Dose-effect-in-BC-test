@@ -18,6 +18,9 @@ reports/*.docx
 reports/*.pdf
 reports/*.html
 
+# shinyapps.io — exclude credentials, keep app metadata
+rsconnect/
+
 # OS
 .DS_Store
 Thumbs.db
