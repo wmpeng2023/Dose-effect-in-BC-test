@@ -1,0 +1,18 @@
+Package: DoseEffectBC
+Title: Dose Effect on Safety and Efficacy in Breast Cancer Patients
+Version: 0.1.0
+Authors@R: person("Wmpeng2023", role = c("aut", "cre"))
+Description: R Shiny app analyzing dose-level effects on Cu/Zn ratio and
+    dysgeusia toxicity in breast cancer patients.
+License: MIT
+Imports:
+    shiny,
+    bslib,
+    plotly,
+    dplyr,
+    DT,
+    ggplot2,
+    survival,
+    broom,
+    officer,
+    flextable

@@ -37,7 +37,7 @@ ui <- page_navbar(
     bootswatch = "flatly",
     primary    = "#1976D2"
   ),
-  includeCSS("www/custom.css"),
+  header = includeCSS("www/custom.css"),
 
   # ---- Tab 1: Data Management ----
   nav_panel(
@@ -84,7 +84,7 @@ ui <- page_navbar(
   # ---- Tab 2: Bubble Plot ----
   nav_panel(
     title = "Bubble Plot",
-    icon  = icon("chart-bubble"),
+    icon  = icon("circle-dot"),
     layout_sidebar(
       sidebar = sidebar(
         width = 260,
