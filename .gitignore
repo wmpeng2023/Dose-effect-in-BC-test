@@ -1,0 +1,20 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Generated outputs
+data/simulated_data.csv
+reports/*.docx
+reports/*.pdf
+reports/*.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.log
