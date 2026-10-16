@@ -195,7 +195,8 @@ plot_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
                     x = 0, font = list(size = 15)),
       xaxis  = list(title = "Dose Level (mg)", type = "category"),
       yaxis  = list(title = "Dysgeusia Incidence (%)", range = c(0, 105),
-                    tickvals = seq(0, 100, 25)),
+                    tickvals = seq(0, 100, 25),
+                    showline = TRUE, linecolor = "black", zeroline = FALSE),
       yaxis2 = list(
         title     = list(text = "Mean Maximum Grade", font = list(color = grade_red)),
         overlaying = "y", side = "right",
