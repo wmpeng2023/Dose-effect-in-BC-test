@@ -60,7 +60,7 @@ create_bubble_plot <- function(data, bubble_scale = 5) {
                   text  = tooltip_text)) +
     geom_point(alpha = 0.78) +
     scale_size_continuous(
-      range  = c(bubble_scale * 0.7, bubble_scale * 2.8),
+      range  = c(bubble_scale * 0.7, bubble_scale * 2.0),
       name   = "Grade",
       breaks = DYSGEUSIA_GRADES
     ) +
@@ -112,7 +112,7 @@ create_bubble_plot_static <- function(data, bubble_scale = 5) {
              color = grade_label)) +
     geom_point(alpha = 0.78) +
     scale_size_continuous(
-      range  = c(bubble_scale * 0.7, bubble_scale * 2.8),
+      range  = c(bubble_scale * 0.7, bubble_scale * 2.0),
       name   = "Grade",
       breaks = DYSGEUSIA_GRADES
     ) +
