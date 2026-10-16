@@ -10,7 +10,7 @@
 simulate_bc_data <- function(n_patients = 100, seed = 42) {
   set.seed(seed)
 
-  dose_levels <- c(1, 2, 4, 8, 15, 30)
+  dose_levels <- c(1, 2, 4, 8, 15, 25)
   n_doses <- length(dose_levels)
 
   # Distribute patients evenly across dose levels
@@ -25,7 +25,7 @@ simulate_bc_data <- function(n_patients = 100, seed = 42) {
   dose_idx <- match(patient_data$dose_mg, dose_levels)  # 1-6
 
   # Cu/Zn ratio: increases with dose (treatment effect + noise)
-  # At dose 1mg: mean ~1.5; at dose 30mg: mean ~2.6
+  # At dose 1mg: mean ~1.5; at dose 25mg: mean ~2.6
   cu_zn_mean <- 1.50 + 0.22 * (dose_idx - 1)
   patient_data$cu_zn_ratio <- round(
     rnorm(n_patients, mean = cu_zn_mean, sd = 0.28),
@@ -35,16 +35,16 @@ simulate_bc_data <- function(n_patients = 100, seed = 42) {
 
   # --- Dysgeusia event generation ---
   # Probability of reaching each grade (cumulative, must be non-increasing)
-  # Grade 1 incidence: 20% (1mg) to 75% (30mg)
-  # Grade 4 incidence: 2% (1mg) to 15% (30mg)
+  # CTCAE dysgeusia has only Grade 1 (mild) and Grade 2 (moderate)
+  # Grade 1 incidence: 20% (1mg) to 75% (25mg)
+  # Grade 2 incidence: 12% (1mg) to 57% (25mg)
   p_g1 <- pmin(pmax(0.20 + 0.11 * (dose_idx - 1) + rnorm(n_patients, 0, 0.04), 0.05), 0.90)
   p_g2 <- pmin(pmax(0.12 + 0.09 * (dose_idx - 1) + rnorm(n_patients, 0, 0.04), 0.02), p_g1)
-  p_g3 <- pmin(pmax(0.05 + 0.05 * (dose_idx - 1) + rnorm(n_patients, 0, 0.03), 0.01), p_g2)
-  p_g4 <- pmin(pmax(0.01 + 0.025 * (dose_idx - 1) + rnorm(n_patients, 0, 0.02), 0.005), p_g3)
 
-  p_grade <- cbind(p_g1, p_g2, p_g3, p_g4)
+  p_grade <- cbind(p_g1, p_g2)
+  max_grade <- ncol(p_grade)
 
-  event_rows <- vector("list", n_patients * 4)
+  event_rows <- vector("list", n_patients * max_grade)
   event_count <- 0
 
   for (i in seq_len(n_patients)) {
@@ -57,7 +57,7 @@ simulate_bc_data <- function(n_patients = 100, seed = 42) {
 
     prev_time <- 0
 
-    for (g in 1:4) {
+    for (g in seq_len(max_grade)) {
       if (runif(1) > p_grade[i, g]) break  # Stops at first "no" — grade hierarchy enforced
 
       if (g == 1) {

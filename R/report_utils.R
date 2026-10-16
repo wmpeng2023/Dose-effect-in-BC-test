@@ -10,7 +10,7 @@ library(ggplot2)
 source("R/bubble_plot.R")
 source("R/analysis.R")
 
-export_word_report <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 30), output_file) {
+export_word_report <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 25), output_file) {
   full_data <- data_list$full_data
   pl <- patient_level(full_data, dose_filter)
 
@@ -83,6 +83,21 @@ export_word_report <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 30), o
   ct_cuzn <- cor.test(pl$cu_zn_ratio, pl$max_grade, method = "spearman", exact = FALSE)
   # Spearman: dose vs grade
   ct_dose <- cor.test(pl$dose_mg, pl$max_grade, method = "spearman", exact = FALSE)
+  # Ordinal logistic: log(Dose) + Cu/Zn -> max grade (0/1/2)
+  ord_tidy <- fit_ordinal(pl, "log(dose_mg) + cu_zn_ratio")
+  ord_text <- if (is.character(ord_tidy)) {
+    paste0("Ordinal Logistic Regression (Max Grade 0/1/2): ", ord_tidy, "\n\n")
+  } else {
+    paste0(
+      "Ordinal Logistic Regression (Max Grade 0/1/2, proportional odds):\n",
+      "  log(Dose) OR = ", round(ord_tidy$odds_ratio[1], 2),
+      " [95% CI: ", round(ord_tidy$conf.low[1], 2), "-", round(ord_tidy$conf.high[1], 2), "],",
+      " p = ", signif(ord_tidy$p.value[1], 3), "\n",
+      "  Cu/Zn Ratio OR = ", round(ord_tidy$odds_ratio[2], 2),
+      " [95% CI: ", round(ord_tidy$conf.low[2], 2), "-", round(ord_tidy$conf.high[2], 2), "],",
+      " p = ", signif(ord_tidy$p.value[2], 3), "\n\n"
+    )
+  }
   # Cox model
   cox_fit <- coxph(Surv(surv_time, surv_event) ~ log(dose_mg) + cu_zn_ratio, data = pl)
   cox_tidy <- tidy(cox_fit, exponentiate = TRUE, conf.int = TRUE)
@@ -102,6 +117,7 @@ export_word_report <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 30), o
     ", p = ", signif(ct_dose$p.value, 3), ".\n\n",
     "Cu/Zn Ratio vs Maximum Grade (Spearman): rho = ", round(ct_cuzn$estimate, 3),
     ", p = ", signif(ct_cuzn$p.value, 3), ".\n\n",
+    ord_text,
     "Cox Regression (Time to Dysgeusia):\n",
     "  log(Dose) HR = ", round(cox_tidy$estimate[1], 2),
     " [95% CI: ", round(cox_tidy$conf.low[1], 2), "-", round(cox_tidy$conf.high[1], 2), "],",
@@ -121,7 +137,7 @@ export_word_report <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 30), o
     body_add_par(paste0(
       "Each bubble represents one dysgeusia event (patient × grade). ",
       "X-axis: days from treatment start to first onset of that grade. ",
-      "Y-axis: serum Cu/Zn ratio. Bubble size and color denote CTCAE grade."
+      "Y-axis: serum Cu/Zn ratio. Bubble size and color denote CTCAE grade (1 = mild, 2 = moderate)."
     ), style = "Normal")
 
   event_plot_data <- full_data %>%

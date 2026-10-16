@@ -1,8 +1,8 @@
 # analysis.R
 # Statistical analysis functions:
 #   1. Summary statistics
-#   2. Dose-response (logistic regression, Spearman correlation)
-#   3. Cu/Zn ratio vs dysgeusia grade (linear regression)
+#   2. Dose-response (logistic regression, Spearman, ordinal logistic regression)
+#   3. Cu/Zn ratio vs dysgeusia grade (ordinal logistic regression)
 #   4. Time to dysgeusia (Cox proportional hazards, KM curves)
 
 library(dplyr)
@@ -12,6 +12,33 @@ library(survival)
 library(broom)
 
 CENSORING_DAY <- 180  # Patients without events are censored at this day
+
+# Helper: proportional-odds ordinal logistic regression on max grade (0/1/2).
+# Returns a tidy table of odds ratios (95% CI, likelihood-ratio p-values),
+# or a character string explaining why the model is not estimable.
+fit_ordinal <- function(pl, rhs) {
+  pl$max_grade_ord <- droplevels(factor(pl$max_grade, levels = 0:2, ordered = TRUE))
+  if (nlevels(pl$max_grade_ord) < 3) {
+    return("Not estimable: fewer than 3 grade categories (0/1/2) in selected data.")
+  }
+  if (grepl("dose_mg", rhs) && length(unique(pl$dose_mg)) < 2) {
+    return("Not estimable: at least 2 dose levels are needed to estimate a dose effect.")
+  }
+  tryCatch({
+    fit <- MASS::polr(as.formula(paste("max_grade_ord ~", rhs)), data = pl, Hess = TRUE)
+    suppressMessages(
+      tidy(fit, exponentiate = TRUE, conf.int = TRUE, p.values = TRUE)
+    ) %>%
+      filter(coef.type == "coefficient") %>%
+      select(term, odds_ratio = estimate, conf.low, conf.high, p.value)
+  }, error = function(e) {
+    paste("Not estimable with selected data:", conditionMessage(e))
+  })
+}
+
+print_ordinal <- function(res) {
+  if (is.character(res)) cat(" ", res, "\n\n") else { print(res, digits = 3); cat("\n") }
+}
 
 # Helper: patient-level summary from full_data
 patient_level <- function(full_data, dose_filter) {
@@ -34,7 +61,7 @@ patient_level <- function(full_data, dose_filter) {
 }
 
 # ---- 1. Summary Statistics ----
-summarize_data <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+summarize_data <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(data_list$full_data, dose_filter)
 
   cat("=== DATASET SUMMARY ===\n\n")
@@ -67,7 +94,7 @@ summarize_data <- function(data_list, dose_filter = c(1, 2, 4, 8, 15, 30)) {
 }
 
 # ---- 2. Dose-Response Analysis ----
-analyze_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+analyze_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(full_data, dose_filter)
 
   cat("=== DOSE-RESPONSE ANALYSIS ===\n\n")
@@ -81,13 +108,14 @@ analyze_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)
   ct <- cor.test(pl$dose_mg, pl$max_grade, method = "spearman", exact = FALSE)
   cat(sprintf("  rho = %.3f,  p-value = %.4f\n\n", ct$estimate, ct$p.value))
 
-  cat("--- ANOVA: Max Grade across Dose Groups ---\n")
-  aov_fit <- aov(max_grade ~ factor(dose_mg), data = pl)
-  print(summary(aov_fit))
+  cat("--- Ordinal Logistic Regression: log(Dose) -> Max Grade (0/1/2) ---\n")
+  print_ordinal(fit_ordinal(pl, "log(dose_mg)"))
+
+  cat("Odds ratio = odds of a higher max grade per 1-unit increase in log(dose).\n")
 }
 
 # ---- 3. Cu/Zn vs Dysgeusia Grade ----
-analyze_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+analyze_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(full_data, dose_filter)
 
   cat("=== CU/ZN RATIO vs DYSGEUSIA GRADE ===\n\n")
@@ -96,21 +124,18 @@ analyze_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
   ct <- cor.test(pl$cu_zn_ratio, pl$max_grade, method = "spearman", exact = FALSE)
   cat(sprintf("  rho = %.3f,  p-value = %.4f\n\n", ct$estimate, ct$p.value))
 
-  cat("--- Simple Linear Regression: Cu/Zn -> Max Grade ---\n")
-  lm1 <- lm(max_grade ~ cu_zn_ratio, data = pl)
-  print(tidy(lm1, conf.int = TRUE), digits = 3)
-  cat(sprintf("  R² = %.3f\n\n", summary(lm1)$r.squared))
+  cat("--- Ordinal Logistic Regression: Cu/Zn -> Max Grade (0/1/2) ---\n")
+  print_ordinal(fit_ordinal(pl, "cu_zn_ratio"))
 
-  cat("--- Multiple Regression: log(Dose) + Cu/Zn -> Max Grade ---\n")
-  lm2 <- lm(max_grade ~ log(dose_mg) + cu_zn_ratio, data = pl)
-  print(tidy(lm2, conf.int = TRUE), digits = 3)
-  cat(sprintf("  R² = %.3f\n\n", summary(lm2)$r.squared))
+  cat("--- Ordinal Logistic Regression: log(Dose) + Cu/Zn -> Max Grade ---\n")
+  print_ordinal(fit_ordinal(pl, "log(dose_mg) + cu_zn_ratio"))
 
-  cat("Note: Cu/Zn ratio is collinear with dose; interpret multiple regression with caution.\n")
+  cat("Proportional-odds model (MASS::polr). Odds ratio > 1 = higher odds of a more severe grade.\n")
+  cat("Note: Cu/Zn ratio is collinear with dose; interpret the multivariable model with caution.\n")
 }
 
 # ---- 4. Survival / Time to Dysgeusia ----
-run_cox_analysis <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+run_cox_analysis <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(full_data, dose_filter)
 
   cat("=== TIME TO FIRST DYSGEUSIA — COX REGRESSION ===\n\n")
@@ -130,7 +155,7 @@ run_cox_analysis <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
 }
 
 # ---- Plot: Dose-Response Bar + Line ----
-plot_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+plot_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(full_data, dose_filter)
 
   summary_df <- pl %>%
@@ -143,12 +168,12 @@ plot_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
 
   p <- ggplot(summary_df, aes(x = factor(dose_mg))) +
     geom_col(aes(y = incidence), fill = "#1976D2", alpha = 0.85, width = 0.6) +
-    geom_line(aes(y = mean_grade * 20, group = 1), color = "#F44336", linewidth = 1.2) +
-    geom_point(aes(y = mean_grade * 20), color = "#F44336", size = 3.5) +
+    geom_line(aes(y = mean_grade * 50, group = 1), color = "#F44336", linewidth = 1.2) +
+    geom_point(aes(y = mean_grade * 50), color = "#F44336", size = 3.5) +
     scale_y_continuous(
       name     = "Dysgeusia Incidence (%)",
       limits   = c(0, 100),
-      sec.axis = sec_axis(~ . / 20, name = "Mean Maximum Grade", breaks = 0:4)
+      sec.axis = sec_axis(~ . / 50, name = "Mean Maximum Grade", breaks = 0:2)
     ) +
     labs(
       x       = "Dose Level (mg)",
@@ -162,7 +187,7 @@ plot_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
 }
 
 # ---- Plot: Cu/Zn vs Max Grade scatter ----
-plot_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+plot_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(full_data, dose_filter)
 
   p <- ggplot(pl,
@@ -177,12 +202,12 @@ plot_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
     geom_smooth(aes(group = 1), method = "lm", se = TRUE,
                 color = "black", linetype = "dashed", linewidth = 0.8) +
     scale_color_brewer(palette = "Set1", name = "Dose (mg)") +
-    scale_y_continuous(breaks = 0:4) +
+    scale_y_continuous(breaks = 0:2) +
     labs(
       x       = "Baseline Cu/Zn Ratio",
       y       = "Maximum Dysgeusia Grade",
       title   = "Cu/Zn Ratio vs Maximum Dysgeusia Grade",
-      caption = "Dashed line = overall linear trend"
+      caption = "Dashed line = overall linear trend (visual guide; see ordinal model below)"
     ) +
     theme_minimal(base_size = 13) +
     theme(plot.title = element_text(face = "bold"))
@@ -191,7 +216,7 @@ plot_cuzn_grade <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
 }
 
 # ---- Plot: KM curves by dose ----
-plot_km <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 30)) {
+plot_km <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   pl <- patient_level(full_data, dose_filter)
   dose_levels_used <- sort(as.numeric(dose_filter))
 

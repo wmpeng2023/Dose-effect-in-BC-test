@@ -47,6 +47,11 @@
       "Maintainer": "Garrick Aden-Buie <garrick@posit.co>",
       "Repository": "CRAN"
     },
+    "MASS": {
+      "Package": "MASS",
+      "Version": "7.3-65",
+      "Source": "Repository"
+    },
     "Matrix": {
       "Package": "Matrix",
       "Version": "1.7-4",

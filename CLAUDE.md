@@ -16,7 +16,7 @@ One row per patient:
 | Column | Type | Description |
 |--------|------|-------------|
 | patient_id | integer | Unique patient identifier |
-| dose_mg | numeric | Dose level: 1, 2, 4, 8, 15, or 30 mg |
+| dose_mg | numeric | Dose level: 1, 2, 4, 8, 15, or 25 mg |
 | cu_zn_ratio | numeric | Baseline serum Cu/Zn ratio |
 
 ### Event Table (`event_data`) — Long Format
@@ -24,7 +24,7 @@ One row per patient × grade:
 | Column | Type | Description |
 |--------|------|-------------|
 | patient_id | integer | Links to patient table |
-| dysgeusia_grade | integer | CTCAE grade (1–4) at first occurrence |
+| dysgeusia_grade | integer | CTCAE grade (1–2) at first occurrence |
 | time_to_first_onset | integer | Days from treatment start to first report of this grade |
 
 ### Full/Merged Table (`full_data`)
@@ -35,6 +35,8 @@ One row per patient × grade:
 - A patient can have grade 1 without grade 2, but NOT grade 2 without grade 1
 - `time_to_first_onset` is the FIRST occurrence of each grade (not a repeat)
 - Grade 0 = no dysgeusia (event-free / censored)
+- Per CTCAE, dysgeusia has only Grade 1 (mild) and Grade 2 (moderate); no Grade 3/4. Uploaded files with grade ≥ 3 are rejected
+- Max grade (0/1/2) analyzed with ordinal logistic regression (`MASS::polr`)
 - Censoring time = 180 days for survival analysis
 
 ## File Structure
@@ -60,7 +62,7 @@ Project 1/
 - **Shiny ecosystem**: `shiny`, `bslib`, `DT`, `shinyWidgets`
 - **Visualization**: `ggplot2`, `plotly`
 - **Data**: `dplyr`, `tidyr`
-- **Statistics**: `survival`, `broom`
+- **Statistics**: `survival`, `broom`, `MASS`
 - **Reporting**: `officer`, `flextable`
 - **Optional**: `survminer`
 

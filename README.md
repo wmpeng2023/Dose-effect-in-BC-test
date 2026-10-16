@@ -8,10 +8,10 @@ An R Shiny application analyzing the relationship between dose level, serum Copp
 
 ## App Features
 
-- **Simulated dataset** — 100 patients across 6 dose levels (1, 2, 4, 8, 15, 30 mg)
+- **Simulated dataset** — 100 patients across 6 dose levels (1, 2, 4, 8, 15, 25 mg)
 - **Interactive bubble plot** — time vs Cu/Zn ratio, bubble size/color by CTCAE dysgeusia grade
 - **Dose & grade filters** — explore subsets interactively
-- **Statistical analysis** — dose-response, Cu/Zn vs grade, Cox regression, KM curves
+- **Statistical analysis** — dose-response, Cu/Zn vs grade (ordinal logistic regression), Cox regression, KM curves
 - **Upload your own data** — CSV template provided in the app
 - **Export to Word** — download a formatted summary report
 
@@ -69,9 +69,9 @@ The app uses a **long-format** dataset where each row is one patient × dysgeusi
 | Column | Type | Description |
 |--------|------|-------------|
 | `patient_id` | integer | Unique patient ID |
-| `dose_mg` | numeric | Dose level (1, 2, 4, 8, 15, or 30 mg) |
+| `dose_mg` | numeric | Dose level (1, 2, 4, 8, 15, or 25 mg) |
 | `cu_zn_ratio` | numeric | Baseline serum Cu/Zn ratio |
-| `dysgeusia_grade` | integer | CTCAE grade (0 = none, 1–4 = severity) |
+| `dysgeusia_grade` | integer | CTCAE grade (0 = none, 1 = mild, 2 = moderate; uploads with grade ≥ 3 are rejected) |
 | `time_to_first_onset` | numeric | Days from treatment start to first occurrence of this grade (NA if grade 0) |
 
 - Event patients have **multiple rows** (one per grade experienced)

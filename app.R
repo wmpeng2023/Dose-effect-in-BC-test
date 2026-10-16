@@ -4,7 +4,7 @@
 #
 # Usage: shiny::runApp("app.R")
 # Required packages: shiny, bslib, plotly, dplyr, DT, ggplot2,
-#                    survival, broom, officer, flextable
+#                    survival, broom, MASS, officer, flextable
 
 library(shiny)
 library(bslib)
@@ -18,7 +18,7 @@ source("R/bubble_plot.R")
 source("R/analysis.R")
 source("R/report_utils.R")
 
-DOSE_LEVELS <- c(1, 2, 4, 8, 15, 30)
+DOSE_LEVELS <- c(1, 2, 4, 8, 15, 25)
 
 # Generate default data once at startup
 default_data <- simulate_bc_data(n_patients = 100, seed = 42)
@@ -98,8 +98,8 @@ ui <- page_navbar(
         h4("Filter by Grade"),
         checkboxGroupInput(
           "filter_grade", NULL,
-          choices  = paste0("Grade ", 1:4),
-          selected = paste0("Grade ", 1:4)
+          choices  = paste0("Grade ", DYSGEUSIA_GRADES),
+          selected = paste0("Grade ", DYSGEUSIA_GRADES)
         ),
         hr(),
         h4("Time Range (days)"),
@@ -175,9 +175,9 @@ ui <- page_navbar(
         ),
         h4("Variables"),
         tags$ul(
-          tags$li(tags$b("Dose Level:"), " 1, 2, 4, 8, 15, 30 mg"),
+          tags$li(tags$b("Dose Level:"), " 1, 2, 4, 8, 15, 25 mg"),
           tags$li(tags$b("Cu/Zn Ratio:"), " Single baseline serum measurement (cancer patients: ~1.5–3.5)"),
-          tags$li(tags$b("Dysgeusia Grade:"), " CTCAE v5 grading (0 = none, 1 = mild, 2 = moderate, 3 = severe, 4 = life-threatening)"),
+          tags$li(tags$b("Dysgeusia Grade:"), " CTCAE v5 grading (0 = none, 1 = mild, 2 = moderate; Grade 3/4 not defined for dysgeusia)"),
           tags$li(tags$b("Time to Dysgeusia:"), " Days from treatment start to first occurrence of each grade")
         ),
         h4("Data"),
@@ -228,6 +228,18 @@ server <- function(input, output, session) {
         showNotification(
           paste("Missing required columns:", paste(missing_cols, collapse = ", ")),
           type = "error", duration = 6
+        )
+        return()
+      }
+
+      # CTCAE dysgeusia is graded 1-2 only; reject Grade 3+ or other invalid grades
+      bad_grade <- !is.na(uploaded$dysgeusia_grade) & !(uploaded$dysgeusia_grade %in% c(0, DYSGEUSIA_GRADES))
+      if (any(bad_grade)) {
+        showNotification(
+          paste0("Invalid dysgeusia_grade in ", sum(bad_grade), " row(s) (values: ",
+                 paste(sort(unique(uploaded$dysgeusia_grade[bad_grade])), collapse = ", "),
+                 "). CTCAE dysgeusia allows only 0 (none), 1, or 2. File rejected."),
+          type = "error", duration = 10
         )
         return()
       }

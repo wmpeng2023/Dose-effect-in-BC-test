@@ -13,10 +13,11 @@ library(dplyr)
 GRADE_COLORS <- c(
   "Grade 0" = "#AAAAAA",
   "Grade 1" = "#4CAF50",
-  "Grade 2" = "#FF9800",
-  "Grade 3" = "#F44336",
-  "Grade 4" = "#9C27B0"
+  "Grade 2" = "#FF9800"
 )
+
+# CTCAE dysgeusia grades (Grade 1 = mild, Grade 2 = moderate; no Grade 3/4)
+DYSGEUSIA_GRADES <- 1:2
 
 # ---- Interactive plotly bubble plot (for Shiny) ----
 create_bubble_plot <- function(data, bubble_scale = 5) {
@@ -32,7 +33,7 @@ create_bubble_plot <- function(data, bubble_scale = 5) {
     mutate(
       grade_label = factor(
         paste0("Grade ", dysgeusia_grade),
-        levels = paste0("Grade ", 1:4)
+        levels = paste0("Grade ", DYSGEUSIA_GRADES)
       ),
       bubble_size = dysgeusia_grade * bubble_scale,
       tooltip_text = paste0(
@@ -61,10 +62,10 @@ create_bubble_plot <- function(data, bubble_scale = 5) {
     scale_size_continuous(
       range  = c(bubble_scale * 0.7, bubble_scale * 2.8),
       name   = "Grade",
-      breaks = 1:4
+      breaks = DYSGEUSIA_GRADES
     ) +
     scale_color_manual(
-      values = GRADE_COLORS[paste0("Grade ", 1:4)],
+      values = GRADE_COLORS[paste0("Grade ", DYSGEUSIA_GRADES)],
       name   = "Dysgeusia Grade",
       drop   = FALSE
     ) +
@@ -72,7 +73,7 @@ create_bubble_plot <- function(data, bubble_scale = 5) {
       title    = "Dysgeusia Onset: Cu/Zn Ratio vs Time from Treatment Start",
       x        = "Time from Treatment Start (Days)",
       y        = "Serum Copper/Zinc Ratio",
-      caption  = "Bubble size and color reflect CTCAE dysgeusia grade (1 = mild, 4 = severe)"
+      caption  = "Bubble size and color reflect CTCAE dysgeusia grade (1 = mild, 2 = moderate)"
     ) +
     theme_minimal(base_size = 13) +
     theme(
@@ -92,7 +93,7 @@ create_bubble_plot_static <- function(data, bubble_scale = 5) {
     mutate(
       grade_label = factor(
         paste0("Grade ", dysgeusia_grade),
-        levels = paste0("Grade ", 1:4)
+        levels = paste0("Grade ", DYSGEUSIA_GRADES)
       )
     )
 
@@ -113,10 +114,10 @@ create_bubble_plot_static <- function(data, bubble_scale = 5) {
     scale_size_continuous(
       range  = c(bubble_scale * 0.7, bubble_scale * 2.8),
       name   = "Grade",
-      breaks = 1:4
+      breaks = DYSGEUSIA_GRADES
     ) +
     scale_color_manual(
-      values = GRADE_COLORS[paste0("Grade ", 1:4)],
+      values = GRADE_COLORS[paste0("Grade ", DYSGEUSIA_GRADES)],
       name   = "Dysgeusia Grade",
       drop   = FALSE
     ) +
