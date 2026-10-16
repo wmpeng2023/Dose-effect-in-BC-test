@@ -18,9 +18,7 @@ An R Shiny application analyzing the relationship between dose level, serum Copp
 ## Access Options
 
 ### Option A — Live Web App (no installation needed)
-> **Click to open:** `https://YOUR_SHINYAPPS_USERNAME.shinyapps.io/Dose-effect-in-BC-test/`
->
-> *(Link will be active after deployment — see [Deploying to shinyapps.io](#deploying-to-shinyappsio) below)*
+> **Click to open:** https://wmpeng2023.shinyapps.io/Dose-effect-in-BC-test/
 
 Anyone with the link can open and use the app in their browser — no R required.
 
@@ -98,7 +96,21 @@ https://YOUR_USERNAME.shinyapps.io/Dose-effect-in-BC-test/
 Share that URL — anyone can click it, no R needed.
 
 > **Note:** The free tier allows 25 active hours/month and up to 5 apps.
-> Credentials in `deploy.R` are **never committed to GitHub** (excluded via `.gitignore`).
+> Never commit real credentials: keep the placeholders in the committed `deploy.R`.
+> After the first run, credentials are stored in `rsconnect/`, which is excluded via `.gitignore`.
+
+### Updating the live app
+
+GitHub and shinyapps.io are separate — after pushing code changes, redeploy to update the live app (same URL).
+List the files explicitly so `deploy.R` and other local files are not uploaded:
+
+```r
+rsconnect::deployApp(
+  appName  = "Dose-effect-in-BC-test",
+  appFiles = c("app.R", list.files("R", full.names = TRUE),
+               "www/custom.css", "data/simulated_data.csv")
+)
+```
 
 ---
 

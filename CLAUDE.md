@@ -45,6 +45,10 @@ Project 1/
 ├── CLAUDE.md               ← This file
 ├── .gitignore
 ├── app.R                   ← Main Shiny entry point
+├── deploy.R                ← shinyapps.io deployment (placeholders only — never commit real credentials)
+├── DESCRIPTION             ← Package dependency declarations
+├── renv.lock               ← Pinned package versions
+├── README.md
 ├── R/
 │   ├── simulate_data.R     ← Data simulation logic
 │   ├── bubble_plot.R       ← Bubble plot functions (ggplot2 + plotly)
@@ -53,18 +57,18 @@ Project 1/
 ├── data/
 │   └── simulated_data.csv  ← Generated on app start (auto-saved)
 ├── reports/
-│   └── summary_report.Rmd  ← Rmarkdown report template
+│   └── bubble_plot.png     ← Static bubble plot snapshot
 └── www/
     └── custom.css          ← App styling
 ```
 
 ## R Package Dependencies
-- **Shiny ecosystem**: `shiny`, `bslib`, `DT`, `shinyWidgets`
+- **Shiny ecosystem**: `shiny`, `bslib`, `DT`
 - **Visualization**: `ggplot2`, `plotly`
-- **Data**: `dplyr`, `tidyr`
+- **Data**: `dplyr`
 - **Statistics**: `survival`, `broom`, `MASS`
 - **Reporting**: `officer`, `flextable`
-- **Optional**: `survminer`
+- **Deployment**: `rsconnect`, `renv`
 
 ## Shiny App Architecture
 - **Data tab**: View/upload data, download template, regenerate simulation
@@ -79,5 +83,9 @@ Project 1/
 - Source: Published literature on serum copper/zinc in oncology
 
 ## GitHub
-- Repository: `Dose effect in BC (test)` (private)
+- Repository: `Dose effect in BC (test)` (private) — https://github.com/Wmpeng2023/Dose-effect-in-BC-test.git
 - Owner: Wmpeng2023
+
+## Deployment
+- Live app: https://wmpeng2023.shinyapps.io/Dose-effect-in-BC-test/ (keep this URL; redeploy to same appName)
+- Pushing to GitHub does NOT update shinyapps.io — redeploy with explicit `appFiles` (see README "Updating the live app") so `deploy.R`/`.claude/` aren't uploaded
