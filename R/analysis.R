@@ -161,29 +161,52 @@ plot_dose_response <- function(full_data, dose_filter = c(1, 2, 4, 8, 15, 25)) {
   summary_df <- pl %>%
     group_by(dose_mg) %>%
     summarise(
+      n          = n(),
+      n_events   = sum(any_dysgeusia),
       incidence  = mean(any_dysgeusia) * 100,
       mean_grade = mean(max_grade),
       .groups    = "drop"
+    ) %>%
+    mutate(dose_lab = factor(paste0(dose_mg, " mg"), levels = paste0(dose_mg, " mg")))
+
+  grade_red <- "#F44336"
+
+  # Native plotly (ggplotly drops sec_axis): incidence on left axis,
+  # mean max grade on its own right-hand axis (0-2). Ranges share a 50:1
+  # ratio so gridlines align (Grade 1 <-> 50%), but values are not rescaled.
+  plot_ly(summary_df, x = ~dose_lab) %>%
+    add_bars(
+      y = ~incidence, name = "Incidence (%)",
+      marker    = list(color = "#1976D2", opacity = 0.85),
+      hovertext = ~paste0(dose_lab, "<br>Incidence: ", round(incidence, 1), "% (",
+                          n_events, "/", n, ")"),
+      hoverinfo = "text"
+    ) %>%
+    add_trace(
+      y = ~mean_grade, type = "scatter", mode = "lines+markers",
+      yaxis = "y2", name = "Mean max grade",
+      line      = list(color = grade_red, width = 3),
+      marker    = list(color = grade_red, size = 10),
+      hovertext = ~paste0(dose_lab, "<br>Mean max grade: ", round(mean_grade, 2)),
+      hoverinfo = "text"
+    ) %>%
+    layout(
+      title  = list(text = "<b>Dose-Response: Incidence (bars) & Mean Maximum Grade (red line)</b>",
+                    x = 0, font = list(size = 15)),
+      xaxis  = list(title = "Dose Level (mg)", type = "category"),
+      yaxis  = list(title = "Dysgeusia Incidence (%)", range = c(0, 105),
+                    tickvals = seq(0, 100, 25)),
+      yaxis2 = list(
+        title     = list(text = "Mean Maximum Grade", font = list(color = grade_red)),
+        overlaying = "y", side = "right",
+        range     = c(0, 2.1), tickvals = 0:2,
+        tickfont  = list(color = grade_red),
+        showline  = TRUE, linecolor = grade_red,
+        showgrid  = FALSE, zeroline = FALSE
+      ),
+      legend = list(orientation = "h", x = 0, y = -0.2),
+      margin = list(r = 70)
     )
-
-  p <- ggplot(summary_df, aes(x = factor(dose_mg))) +
-    geom_col(aes(y = incidence), fill = "#1976D2", alpha = 0.85, width = 0.6) +
-    geom_line(aes(y = mean_grade * 50, group = 1), color = "#F44336", linewidth = 1.2) +
-    geom_point(aes(y = mean_grade * 50), color = "#F44336", size = 3.5) +
-    scale_y_continuous(
-      name     = "Dysgeusia Incidence (%)",
-      limits   = c(0, 100),
-      sec.axis = sec_axis(~ . / 50, name = "Mean Maximum Grade", breaks = 0:2)
-    ) +
-    labs(
-      x       = "Dose Level (mg)",
-      title   = "Dose-Response: Incidence (bars) & Mean Maximum Grade (red line)",
-      caption = "Blue bars = incidence %; Red line = mean max CTCAE grade"
-    ) +
-    theme_minimal(base_size = 13) +
-    theme(plot.title = element_text(face = "bold"))
-
-  ggplotly(p)
 }
 
 # ---- Plot: Cu/Zn vs Max Grade scatter ----
